@@ -3,53 +3,594 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>عيادة د. عبد الرحمن الزميتي</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <title>د. عبد الرحمن محمود الزميتي - حجز موعد</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }
-        .doctor-card { border-radius: 2rem; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .slide-in {
+            animation: slideIn 0.5s ease-in;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
     </style>
 </head>
-<body class="p-4">
-    <div class="max-w-md mx-auto bg-white shadow-2xl doctor-card overflow-hidden">
-        <div class="bg-blue-600 p-8 text-center">
-            <div class="inline-block p-1 bg-white rounded-full shadow-lg mb-4">
-                <img src="doctor.jpg" alt="د. عبد الرحمن الزميتي" class="w-32 h-32 rounded-full object-cover">
-            </div>
-            <h1 class="text-white text-2xl font-bold">د. عبد الرحمن الزميتي</h1>
-            <p class="text-blue-100 mt-1">أخصائي جراحة الكلى والمسالك البولية</p>
-        </div>
-
-        <div class="p-6">
-            <form id="bookingForm" class="space-y-4">
-                <input type="text" id="name" placeholder="اسم المريض بالكامل" required class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-right">
-                <input type="number" id="age" placeholder="السن" required class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl outline-none text-right">
-                
-                <div class="bg-gray-50 p-4 rounded-xl">
-                    <label class="block text-gray-600 text-sm mb-2 text-right">إرسال الحجز إلى:</label>
-                    <div class="flex justify-around">
-                        <label class="flex items-center gap-2"><input type="radio" name="target" value="doctor" checked> الدكتور</label>
-                        <label class="flex items-center gap-2"><input type="radio" name="target" value="staff"> السكرتارية</label>
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-xl shadow-lg transition-all transform hover:scale-105">
-                    حجز الموعد الآن
-                </button>
-            </form>
-        </div>
-    </div>
+<body class="bg-gray-50">
+    <!-- التطبيق الرئيسي -->
+    <div id="app"></div>
 
     <script>
-        document.getElementById('bookingForm').onsubmit = function(e) {
-            e.preventDefault();
-            const name = document.getElementById('name').value;
-            const age = document.getElementById('age').value;
-            const phone = "201025605196"; 
-            const message = `حجز جديد:\nالاسم: ${name}\nالسن: ${age}`;
-            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+        // البيانات الأساسية
+        const doctorData = {
+            name: 'د. عبد الرحمن محمود الزميتي',
+            specialty: 'أخصائي جراحة ومناظير الكلى والمسالك البولية',
+            phone: '01095810582',
+            locations: [
+                {
+                    city: 'الزرقا',
+                    address: 'كوبري المركز - برج الاندلس'
+                },
+                {
+                    city: 'دمياط الجديدة',
+                    address: 'بجوار المركز الاسلامي - اعلي صيدلية موافي'
+                }
+            ],
+            services: [
+                'جراحة ومناظير حصوات الكلى والحالب',
+                'علاج تضخم البروستاتا واضطرابات التبول',
+                'علاج التهابات المسالك البولية الحادة والمزمنة',
+                'متابعة أمراض الكلى ووظائفها'
+            ]
         };
+
+        // إدارة الحالة
+        let currentPage = 'home';
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+        let adminPassword = 'admin123';
+
+        // رندر الصفحة الرئيسية
+        function renderHome() {
+            return `
+                <div class="min-h-screen bg-gradient-to-b from-blue-600 to-blue-400">
+                    <!-- Navigation -->
+                    <nav class="bg-white shadow-lg sticky top-0 z-50">
+                        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+                            <h1 class="text-2xl font-bold text-blue-600">عيادة الدكتور</h1>
+                            <button onclick="goToAdmin()" class="text-gray-600 hover:text-blue-600 text-sm">الدخول للإدارة</button>
+                        </div>
+                    </nav>
+
+                    <!-- Hero Section -->
+                    <div class="max-w-6xl mx-auto px-4 py-12">
+                        <div class="bg-white rounded-lg shadow-2xl overflow-hidden">
+                            <div class="grid md:grid-cols-2 gap-8 p-8">
+                                <div class="flex flex-col justify-center">
+                                    <h2 class="text-4xl font-bold text-blue-600 mb-3">${doctorData.name}</h2>
+                                    <p class="text-xl text-gray-700 mb-6">${doctorData.specialty}</p>
+                                    <p class="text-gray-600 text-lg mb-8">نقدم خدمات تشخيص وعلاج أمراض المسالك البولية والكلى للرجال والنساء والأطفال، مع استخدام أحدث التقنيات في المناظير الجراحية.</p>
+                                    <button onclick="goToBooking()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg w-fit transition">
+                                        احجز موعدك الآن
+                                    </button>
+                                </div>
+                                <div class="bg-blue-50 rounded-lg p-8 flex flex-col justify-center">
+                                    <div class="mb-6">
+                                        <h3 class="text-2xl font-bold text-blue-600 mb-4">تواصل معنا</h3>
+                                        <p class="text-lg text-gray-700 mb-2">
+                                            <span class="font-semibold">الموبايل:</span> 
+                                            <a href="tel:01095810582" class="text-blue-600 hover:underline">01095810582</a>
+                                        </p>
+                                    </div>
+                                    <h4 class="text-lg font-bold text-blue-600 mb-3">فروعنا</h4>
+                                    ${doctorData.locations.map(loc => `
+                                        <div class="mb-4 pb-4 border-b border-gray-300 last:border-b-0">
+                                            <p class="font-semibold text-gray-800">${loc.city}</p>
+                                            <p class="text-gray-600">${loc.address}</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Services Section -->
+                        <div class="mt-12">
+                            <h3 class="text-3xl font-bold text-white mb-8 text-center">خدماتنا</h3>
+                            <div class="grid md:grid-cols-2 gap-6">
+                                ${doctorData.services.map((service, index) => `
+                                    <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition hover:scale-105">
+                                        <div class="flex items-start gap-4">
+                                            <div class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0 font-bold">${index + 1}</div>
+                                            <p class="text-gray-700 text-lg">${service}</p>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // رندر صفحة الحجز
+        function renderBooking() {
+            return `
+                <div class="min-h-screen bg-gray-50 py-8">
+                    <div class="max-w-2xl mx-auto px-4">
+                        <button onclick="goToHome()" class="text-blue-600 hover:text-blue-700 font-semibold mb-6 flex items-center gap-2">
+                            ← العودة للرئيسية
+                        </button>
+
+                        <div class="bg-white rounded-lg shadow-lg p-8">
+                            <h2 class="text-3xl font-bold text-blue-600 mb-2">حجز موعد طبي</h2>
+                            <p class="text-gray-600 mb-8">يرجى ملء البيانات التالية لحجز موعدك</p>
+
+                            <form id="bookingForm" class="space-y-6">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">الاسم الكامل</label>
+                                    <input type="text" id="patientName" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600" placeholder="أدخل اسمك الكامل">
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">رقم الهاتف</label>
+                                        <input type="tel" id="patientPhone" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600" placeholder="01xxxxxxxxx">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">السن</label>
+                                        <input type="number" id="patientAge" required min="1" max="120" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600" placeholder="أدخل سنك">
+                                    </div>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">النوع</label>
+                                        <select id="patientGender" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                                            <option value="">اختر النوع</option>
+                                            <option value="ذكر">ذكر</option>
+                                            <option value="أنثى">أنثى</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">الفرع</label>
+                                        <select id="location" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                                            <option value="">اختر الفرع</option>
+                                            ${doctorData.locations.map((loc, index) => `
+                                                <option value="${index}">${loc.city} - ${loc.address}</option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">التاريخ المطلوب</label>
+                                        <input type="date" id="appointmentDate" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                                    </div>
+                                    <div>
+                                        <label class="block text-gray-700 font-semibold mb-2">الوقت المطلوب</label>
+                                        <input type="time" id="appointmentTime" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">نوع الخدمة</label>
+                                    <select id="service" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
+                                        <option value="">اختر الخدمة</option>
+                                        ${doctorData.services.map((service) => `
+                                            <option value="${service}">${service}</option>
+                                        `).join('')}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">ملاحظات إضافية</label>
+                                    <textarea id="notes" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600" placeholder="أي ملاحظات طبية أو استفسارات" rows="4"></textarea>
+                                </div>
+
+                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition">
+                                    تأكيد الحجز
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // رندر صفحة تسجيل دخول الإدارة
+        function renderAdminLogin() {
+            return `
+                <div class="min-h-screen bg-gradient-to-b from-blue-600 to-blue-400 flex items-center justify-center py-8">
+                    <div class="max-w-md w-full mx-auto px-4">
+                        <button onclick="goToHome()" class="text-white hover:text-blue-100 font-semibold mb-6 flex items-center gap-2">
+                            ← العودة للرئيسية
+                        </button>
+
+                        <div class="bg-white rounded-lg shadow-2xl p-8">
+                            <h2 class="text-3xl font-bold text-blue-600 mb-2 text-center">لوحة التحكم</h2>
+                            <p class="text-gray-600 text-center mb-8">تسجيل دخول الإدارة</p>
+
+                            <form id="adminLoginForm" class="space-y-6">
+                                <div>
+                                    <label class="block text-gray-700 font-semibold mb-2">كلمة المرور</label>
+                                    <input type="password" id="adminPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600" placeholder="أدخل كلمة المرور">
+                                </div>
+
+                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg transition">
+                                    دخول
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // رندر صفحة إدارة الحجوزات
+        function renderAdminDashboard() {
+            return `
+                <div class="min-h-screen bg-gray-50">
+                    <!-- Navigation -->
+                    <nav class="bg-white shadow-lg sticky top-0 z-50">
+                        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+                            <h1 class="text-2xl font-bold text-blue-600">لوحة التحكم</h1>
+                            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                                تسجيل الخروج
+                            </button>
+                        </div>
+                    </nav>
+
+                    <div class="max-w-6xl mx-auto px-4 py-8">
+                        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                            <div class="grid md:grid-cols-3 gap-6">
+                                <div class="bg-blue-50 p-6 rounded-lg">
+                                    <h3 class="text-gray-600 font-semibold mb-2">إجمالي الحجوزات</h3>
+                                    <p class="text-4xl font-bold text-blue-600">${bookings.length}</p>
+                                </div>
+                                <div class="bg-green-50 p-6 rounded-lg">
+                                    <h3 class="text-gray-600 font-semibold mb-2">الحجوزات المؤكدة</h3>
+                                    <p class="text-4xl font-bold text-green-600">${bookings.filter(b => b.status === 'مؤكد').length}</p>
+                                </div>
+                                <div class="bg-yellow-50 p-6 rounded-lg">
+                                    <h3 class="text-gray-600 font-semibold mb-2">قيد الانتظار</h3>
+                                    <p class="text-4xl font-bold text-yellow-600">${bookings.filter(b => b.status === 'قيد الانتظار').length}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                            <div class="p-6 border-b border-gray-200">
+                                <h2 class="text-2xl font-bold text-gray-800">الحجوزات</h2>
+                            </div>
+
+                            ${bookings.length === 0 ? `
+                                <div class="p-8 text-center text-gray-500">
+                                    <p class="text-lg">لا توجد حجوزات حتى الآن</p>
+                                </div>
+                            ` : `
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead class="bg-gray-100 border-b border-gray-200">
+                                            <tr>
+                                                <th class="px-6 py-3 text-right text-gray-700 font-semibold">الاسم</th>
+                                                <th class="px-6 py-3 text-right text-gray-700 font-semibold">الهاتف</th>
+                                                <th class="px-6 py-3 text-right text-gray-700 font-semibold">التاريخ والوقت</th>
+                                                <th class="px-6 py-3 text-right text-gray-700 font-semibold">الخدمة</th>
+                                                <th class="px-6 py-3 text-right text-gray-700 font-semibold">الحالة</th>
+                                                <th class="px-6 py-3 text-center text-gray-700 font-semibold">الإجراءات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${bookings.map((booking, index) => `
+                                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                                    <td class="px-6 py-4 text-gray-800">${booking.patientName}</td>
+                                                    <td class="px-6 py-4">
+                                                        <a href="tel:${booking.patientPhone}" class="text-blue-600 hover:underline">${booking.patientPhone}</a>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-gray-700">
+                                                        ${booking.appointmentDate} | ${booking.appointmentTime}
+                                                    </td>
+                                                    <td class="px-6 py-4 text-gray-700 text-sm">${booking.service}</td>
+                                                    <td class="px-6 py-4">
+                                                        <span class="px-3 py-1 rounded-full text-sm font-semibold ${
+                                                            booking.status === 'مؤكد' 
+                                                                ? 'bg-green-100 text-green-800' 
+                                                                : booking.status === 'ملغى'
+                                                                ? 'bg-red-100 text-red-800'
+                                                                : 'bg-yellow-100 text-yellow-800'
+                                                        }">
+                                                            ${booking.status}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-6 py-4 text-center">
+                                                        <button onclick="viewBookingDetails(${index})" class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded mr-2">عرض</button>
+                                                        ${booking.status !== 'مؤكد' ? `<button onclick="confirmBooking(${index})" class="bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-3 rounded mr-2">تأكيد</button>` : ''}
+                                                        ${booking.status !== 'ملغى' ? `<button onclick="cancelBooking(${index})" class="bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3 rounded">إلغاء</button>` : ''}
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // رندر تفاصيل الحجز
+        function renderBookingDetails(index) {
+            const booking = bookings[index];
+            const location = doctorData.locations[booking.locationIndex];
+            
+            return `
+                <div class="min-h-screen bg-gray-50 py-8">
+                    <div class="max-w-2xl mx-auto px-4">
+                        <button onclick="goToAdminDashboard()" class="text-blue-600 hover:text-blue-700 font-semibold mb-6 flex items-center gap-2">
+                            ← العودة
+                        </button>
+
+                        <div class="bg-white rounded-lg shadow-lg p-8">
+                            <h2 class="text-3xl font-bold text-blue-600 mb-8">تفاصيل الحجز</h2>
+
+                            <div class="space-y-6">
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <p class="text-gray-600 font-semibold mb-2">الاسم الكامل</p>
+                                        <p class="text-xl text-gray-800">${booking.patientName}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-600 font-semibold mb-2">رقم الهاتف</p>
+                                        <a href="tel:${booking.patientPhone}" class="text-xl text-blue-600 hover:underline">${booking.patientPhone}</a>
+                                    </div>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <p class="text-gray-600 font-semibold mb-2">السن</p>
+                                        <p class="text-lg text-gray-800">${booking.patientAge} سنة</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-600 font-semibold mb-2">النوع</p>
+                                        <p class="text-lg text-gray-800">${booking.patientGender}</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-600 font-semibold mb-2">الفرع</p>
+                                    <p class="text-lg text-gray-800">${location.city}</p>
+                                    <p class="text-gray-600">${location.address}</p>
+                                </div>
+
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <p class="text-gray-600 font-semibold mb-2">التاريخ</p>
+                                        <p class="text-lg text-gray-800">${booking.appointmentDate}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-600 font-semibold mb-2">الوقت</p>
+                                        <p class="text-lg text-gray-800">${booking.appointmentTime}</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-600 font-semibold mb-2">الخدمة المطلوبة</p>
+                                    <p class="text-lg text-gray-800">${booking.service}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-600 font-semibold mb-2">ملاحظات</p>
+                                    <p class="text-gray-800 bg-gray-50 p-4 rounded">${booking.notes || 'لا توجد ملاحظات'}</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-600 font-semibold mb-2">حالة الحجز</p>
+                                    <span class="px-4 py-2 rounded-full font-semibold ${
+                                        booking.status === 'مؤكد' 
+                                            ? 'bg-green-100 text-green-800' 
+                                            : booking.status === 'ملغى'
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-yellow-100 text-yellow-800'
+                                    }">
+                                        ${booking.status}
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-600 font-semibold mb-2">تاريخ الحجز</p>
+                                    <p class="text-gray-800">${new Date(booking.createdAt).toLocaleString('ar-EG')}</p>
+                                </div>
+
+                                <div class="flex gap-4 mt-8">
+                                    ${booking.status !== 'مؤكد' ? `<button onclick="confirmBooking(${bookings.indexOf(booking)})" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition">تأكيد الحجز</button>` : ''}
+                                    ${booking.status !== 'ملغى' ? `<button onclick="cancelBooking(${bookings.indexOf(booking)})" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition">إلغاء الحجز</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // دوال التنقل
+        function goToHome() {
+            currentPage = 'home';
+            render();
+        }
+
+        function goToBooking() {
+            currentPage = 'booking';
+            render();
+        }
+
+        function goToAdmin() {
+            currentPage = 'adminLogin';
+            render();
+        }
+
+        function goToAdminDashboard() {
+            currentPage = 'adminDashboard';
+            render();
+        }
+
+        function viewBookingDetails(index) {
+            currentPage = { page: 'bookingDetails', index };
+            render();
+        }
+
+        function logout() {
+            sessionStorage.removeItem('adminLoggedIn');
+            goToHome();
+        }
+
+        // معالجة تسجيل الدخول
+        document.addEventListener('submit', function(e) {
+            if (e.target.id === 'adminLoginForm') {
+                e.preventDefault();
+                const password = document.getElementById('adminPassword').value;
+                if (password === adminPassword) {
+                    sessionStorage.setItem('adminLoggedIn', 'true');
+                    goToAdminDashboard();
+                } else {
+                    alert('كلمة المرور غير صحيحة');
+                }
+            } else if (e.target.id === 'bookingForm') {
+                e.preventDefault();
+                const booking = {
+                    patientName: document.getElementById('patientName').value,
+                    patientPhone: document.getElementById('patientPhone').value,
+                    patientAge: document.getElementById('patientAge').value,
+                    patientGender: document.getElementById('patientGender').value,
+                    locationIndex: parseInt(document.getElementById('location').value),
+                    appointmentDate: document.getElementById('appointmentDate').value,
+                    appointmentTime: document.getElementById('appointmentTime').value,
+                    service: document.getElementById('service').value,
+                    notes: document.getElementById('notes').value,
+                    status: 'قيد الانتظار',
+                    createdAt: new Date().toISOString()
+                };
+                bookings.push(booking);
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                alert('تم حجز موعدك بنجاح! سيتواصل معك الفريق قريباً على الرقم: ' + booking.patientPhone);
+                goToHome();
+            }
+        });
+
+        // دوال إدارة الحجوزات
+        function confirmBooking(index) {
+            if (confirm('هل تريد تأكيد هذا الحجز؟')) {
+                bookings[index].status = 'مؤكد';
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                render();
+            }
+        }
+
+        function cancelBooking(index) {
+            if (confirm('هل تريد إلغاء هذا الحجز؟')) {
+                bookings[index].status = 'ملغى';
+                localStorage.setItem('bookings', JSON.stringify(bookings));
+                render();
+            }
+        }
+
+        // الرندر الرئيسي
+        function render() {
+            const app = document.getElementById('app');
+            let content = '';
+
+            if (currentPage === 'home') {
+                content = renderHome();
+            } else if (currentPage === 'booking') {
+                content = renderBooking();
+            } else if (currentPage === 'adminLogin') {
+                content = renderAdminLogin();
+            } else if (currentPage === 'adminDashboard') {
+                if (!sessionStorage.getItem('adminLoggedIn')) {
+                    goToAdmin();
+                    return;
+                }
+                content = renderAdminDashboard();
+            } else if (typeof currentPage === 'object' && currentPage.page === 'bookingDetails') {
+                if (!sessionStorage.getItem('adminLoggedIn')) {
+                    goToAdmin();
+                    return;
+                }
+                content = renderBookingDetails(currentPage.index);
+            }
+
+            app.innerHTML = content;
+            attachEventListeners();
+        }
+
+        // إرفاق المستمعين للأحداث
+        function attachEventListeners() {
+            const bookingForm = document.getElementById('bookingForm');
+            const adminLoginForm = document.getElementById('adminLoginForm');
+            
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const booking = {
+                        patientName: document.getElementById('patientName').value,
+                        patientPhone: document.getElementById('patientPhone').value,
+                        patientAge: document.getElementById('patientAge').value,
+                        patientGender: document.getElementById('patientGender').value,
+                        locationIndex: parseInt(document.getElementById('location').value),
+                        appointmentDate: document.getElementById('appointmentDate').value,
+                        appointmentTime: document.getElementById('appointmentTime').value,
+                        service: document.getElementById('service').value,
+                        notes: document.getElementById('notes').value,
+                        status: 'قيد الانتظار',
+                        createdAt: new Date().toISOString()
+                    };
+                    bookings.push(booking);
+                    localStorage.setItem('bookings', JSON.stringify(bookings));
+                    alert('تم حجز موعدك بنجاح! سيتواصل معك الفريق قريباً على الرقم: ' + booking.patientPhone);
+                    goToHome();
+                });
+            }
+
+            if (adminLoginForm) {
+                adminLoginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const password = document.getElementById('adminPassword').value;
+                    if (password === adminPassword) {
+                        sessionStorage.setItem('adminLoggedIn', 'true');
+                        goToAdminDashboard();
+                    } else {
+                        alert('كلمة المرور غير صحيحة');
+                    }
+                });
+            }
+
+            // تعيين الحد الأدنى للتاريخ
+            const dateInput = document.getElementById('appointmentDate');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.setAttribute('min', today);
+            }
+        }
+
+        // تهيئة التطبيق
+        render();
     </script>
 </body>
 </html>
