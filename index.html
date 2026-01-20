@@ -16,13 +16,6 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
-        .slide-in {
-            animation: slideIn 0.5s ease-in;
-        }
-        @keyframes slideIn {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -44,14 +37,8 @@
             specialty: 'أخصائي جراحة ومناظير الكلى والمسالك البولية',
             phone: '01095810582',
             locations: [
-                {
-                    city: 'الزرقا',
-                    address: 'كوبري المركز - برج الاندلس'
-                },
-                {
-                    city: 'دمياط الجديدة',
-                    address: 'بجوار المركز الاسلامي - اعلي صيدلية موافي'
-                }
+                { city: 'الزرقا', address: 'كوبري المركز - برج الاندلس' },
+                { city: 'دمياط الجديدة', address: 'بجوار المركز الاسلامي - اعلي صيدلية موافي' }
             ],
             services: [
                 'جراحة ومناظير حصوات الكلى والحالب',
@@ -66,10 +53,12 @@
         let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
         let adminPassword = 'admin123';
 
-        // رندر الصفحة الرئيسية
+        // =================================================
+        // ✅ رندر الصفحة الرئيسية (معدل)
+        // =================================================
         function renderHome() {
             return `
-                <div class="min-h-screen bg-gradient-to-b from-blue-600 to-blue-400">
+                <div class="min-h-screen bg-gradient-to-b from-blue-600 to-blue-400 pb-12">
                     <!-- Navigation -->
                     <nav class="bg-white shadow-lg sticky top-0 z-50">
                         <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -86,58 +75,36 @@
                                     <h2 class="text-4xl font-bold text-blue-600 mb-3">${doctorData.name}</h2>
                                     <p class="text-xl text-gray-700 mb-6">${doctorData.specialty}</p>
                                     <p class="text-gray-600 text-lg mb-8">نقدم خدمات تشخيص وعلاج أمراض المسالك البولية والكلى للرجال والنساء والأطفال، مع استخدام أحدث التقنيات في المناظير الجراحية.</p>
-                                    <button onclick="goToBooking()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg w-fit transition">
+                                    <button onclick="document.getElementById('quickBooking').scrollIntoView({behavior: 'smooth'})" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg w-fit transition">
                                         احجز موعدك الآن
                                     </button>
-
-                                    <!-- فورم الحجز السريع -->
-                                    <form id="quickBookingForm" class="mt-6 space-y-4 bg-blue-50 border border-blue-100 rounded-lg p-4">
-                                        <h3 class="text-lg font-bold text-blue-700 mb-2">حجز سريع</h3>
-
-                                        <div>
-                                            <label class="block text-gray-700 font-semibold mb-1">الاسم</label>
-                                            <input type="text" id="quickName" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
-                                                placeholder="أدخل اسم المريض">
+                                </div>
+                                <div class="bg-blue-50 rounded-lg p-8 flex flex-col justify-center">
+                                    <div class="mb-6">
+                                        <h3 class="text-2xl font-bold text-blue-600 mb-4">تواصل معنا</h3>
+                                        <p class="text-lg text-gray-700 mb-2">
+                                            <span class="font-semibold">الموبايل:</span> 
+                                            <a href="tel:01095810582" class="text-blue-600 hover:underline">01095810582</a>
+                                        </p>
+                                    </div>
+                                    <h4 class="text-lg font-bold text-blue-600 mb-3">فروعنا</h4>
+                                    ${doctorData.locations.map(loc => `
+                                        <div class="mb-4 pb-4 border-b border-gray-300 last:border-b-0">
+                                            <p class="font-semibold text-gray-800">${loc.city}</p>
+                                            <p class="text-gray-600">${loc.address}</p>
                                         </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
 
-                                        <div>
-                                            <label class="block text-gray-700 font-semibold mb-1">رقم الموبايل</label>
-                                            <input type="tel" id="quickPhone" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600"
-                                                placeholder="01xxxxxxxxx">
-                                        </div>
-
-                                        <div>
-                                            <label class="block text-gray-700 font-semibold mb-1">العيادة</label>
-                                            <select id="quickLocation" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
-                                                <option value="">اختر العيادة</option>
-                                                <option value="0">الزرقا - كوبري المركز - برج الاندلس</option>
-                                                <option value="1">دمياط الجديدة - بجوار المركز الاسلامي - اعلي صيدلية موافي</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label class="block text-gray-700 font-semibold mb-1">التاريخ</label>
-                                            <input type="date" id="quickDate" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
-                                        </div>
-
-                                        <div>
-                                            <label class="block text-gray-700 font-semibold mb-1">سبب الزيارة / نوع الخدمة</label>
-                                            <select id="quickService" required
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-600">
-                                                <option value="">اختر الخدمة</option>
-                                                <option value="جراحة المناظير وحصوات الكلي والحالب">جراحة المناظير وحصوات الكلي والحالب</option>
-                                                <option value="علاج تضخم البروستاتا واضرابات البول">علاج تضخم البروستاتا واضرابات البول</option>
-                                                <option value="علاج التهابات المسالك البوليه الحادة والمزمنه">علاج التهابات المسالك البوليه الحادة والمزمنه</option>
-                                                <option value="متابعة امراض الكلي ووظائفها">متابعة امراض الكلي ووظائفها</option>
-                                                <option value="أخرى">أخرى</option>
-                                            </select>
-                                        </div>
-
-                                        <button type="submit"
-                                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg text-md transition">
-                                            تأكيد الحجز السريع
-                                        </button>
+                        <!-- ✅✅✅ الزيادة الجديدة: فورم الحجز السريع ✅✅✅ -->
+                        <div id="quickBooking" class="mt-12 bg-white rounded-lg shadow-2xl p-8 max-w-4xl mx-auto border-t-4 border-green-500">
+                            <h3 class="text-2xl font-bold text-center text-gray-800 mb-6">احجز عن طريق واتساب مباشر</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <input type="text" id="wbName" placeholder="الاسم كامل" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                                <input type="tel" id="wbPhone" placeholder="رقم الموبايل" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                                
+                                <select id="wbClinic" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-green-500">
+                                    <option value="">اختر الفرع</option>
+                                    <option value="الزرقا - كوبري 
